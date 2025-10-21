@@ -120,7 +120,7 @@ export default function UsbDemo() {
                   {device.productId?.toString(16) || "?"}
                 </td>
                 <td style={cellStyle}>
-                  <button onClick={() => connectToDevice(device)}>Kết nối</button>
+                  <button onClick={() => connectToDevice(device)}>In</button>
                 </td>
               </tr>
             ))
