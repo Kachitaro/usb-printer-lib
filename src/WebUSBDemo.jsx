@@ -4,13 +4,10 @@ import { Usb, Power, Wifi, AlertCircle, Check } from "lucide-react";
 export default function WebUSBDemo() {
     const [supported, setSupported] = useState(false);
     const [device, setDevice] = useState(null);
-    const [devices, setDevices] = useState([]);
     const [status, setStatus] = useState("");
     const [deviceInfo, setDeviceInfo] = useState(null);
     const [error, setError] = useState("");
     const [transferData, setTransferData] = useState("");
-    const [receiveData, setReceiveData] = useState("");
-
     useEffect(() => {
         if ("usb" in navigator) {
             setSupported(true);
@@ -28,8 +25,7 @@ export default function WebUSBDemo() {
 
     const loadDevices = async () => {
         try {
-            const devicesList = await navigator.usb.getDevices();
-            setDevices(devicesList);
+            await navigator.usb.getDevices();
         } catch (err) {
             setError(`Failed to load devices: ${err.message}`);
         }
