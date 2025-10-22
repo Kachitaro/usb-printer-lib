@@ -1,3 +1,4 @@
+import { formatPrinterText } from "./formatPrinterText";
 import { USBConnectionEvent, USBDevice } from "./types";
 
 export class UsbPrinterProvider {
@@ -112,7 +113,7 @@ export class UsbPrinterProvider {
     if (!this.device || this.endpointOut == null) {
       throw new Error("⚠️ Chưa kết nối máy in.");
     }
-
+    
     const buffer = data instanceof Uint8Array ? data : new TextEncoder().encode(data);
     const safeView =
       buffer.byteOffset === 0 && buffer.byteLength === buffer.buffer.byteLength
@@ -125,11 +126,8 @@ export class UsbPrinterProvider {
   }
 
   async printText(text: string): Promise<void> {
-    const encoder = new TextEncoder();
-    const ESC = "\x1b";
-    const reset = `${ESC}@`;
-    const cmd = encoder.encode(reset + text + "\n");
-    await this.printRaw(cmd);
+    const data = formatPrinterText(text);
+    await this.printRaw(data);
     await this.feed();
     await this.cut();
   }

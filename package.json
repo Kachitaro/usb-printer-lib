@@ -1,5 +1,5 @@
 {
-  "name": "react-usb-demo",
+  "name": "usb-printer-lib",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^0.546.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
