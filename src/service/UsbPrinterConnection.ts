@@ -1,5 +1,3 @@
-// file: connection/UsbPrinterConnection.ts
-// import { formatPrinterText } from "../formatPrinterText"; // Không dùng ở đây
 import { USBConnectionEvent, USBDevice } from "../types";
 
 export class UsbPrinterConnection {

@@ -62,30 +62,46 @@ export function formatPrinterText(input: string): Uint8Array {
     push(GS, 0x77, width);
     // set height
     push(GS, 0x68, height);
-    // CODE128: GS k m d... (m = 73 (0x49) for CODE128 with length)
-    // Many printers accept: [GS k 73 len data...]
     const dataBytes = Array.from(encoder.encode(code));
     push(GS, 0x6b, 0x49, dataBytes.length, ...dataBytes);
     push(LF);
   };
 
   // QR code helpers using common ESC/POS sequence
-  const printQRCode = (content: string, size = 6, ecc = 48 /* 48..51 maps to levels, we'll use default */) => {
-    // 1) set module size: GS ( k pL pH 49 67 n
-    push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, size);
-    // 2) set error correction level: GS ( k 03 00 49 45 n
-    // n=48..51 (48=L,49=M,50=Q,51=H) -> choose 49 (M) commonly; user can override ecc param
-    push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, ecc);
-    // 3) store data in symbol storage area: GS ( k pL pH 49 80 48 <data>
-    const data = Array.from(encoder.encode(content));
+  // const printQRCode = (content: string, size = 6, ecc = 48 ) => {
+  //   // 1) set module size: GS ( k pL pH 49 67 n
+  //   push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, size);
+  //   // 2) set error correction level: GS ( k 03 00 49 45 n
+  //   // n=48..51 (48=L,49=M,50=Q,51=H) -> choose 49 (M) commonly; user can override ecc param
+  //   push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, ecc);
+  //   // 3) store data in symbol storage area: GS ( k pL pH 49 80 48 <data>
+  //   const data = Array.from(encoder.encode(content));
+  //   const len = data.length + 3;
+  //   const pL = len & 0xff;
+  //   const pH = (len >> 8) & 0xff;
+  //   push(GS, 0x28, 0x6b, pL, pH, 0x31, 0x50, 0x30, ...data);
+  //   // 4) print QR code: GS ( k 03 00 49 81 48
+  //   push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30);
+  //   push(LF);
+  // };
+
+  const printQRCode = (content: string, size = 6, ecc = 48) => {
+    const data = Array.from(encoder.encode(unescape(encodeURIComponent(content))));
     const len = data.length + 3;
     const pL = len & 0xff;
     const pH = (len >> 8) & 0xff;
+    // module size
+    push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, size);
+    // error correction
+    push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, ecc);
+    // store data
     push(GS, 0x28, 0x6b, pL, pH, 0x31, 0x50, 0x30, ...data);
-    // 4) print QR code: GS ( k 03 00 49 81 48
+    // print QR
     push(GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30);
-    push(LF);
+    // flush
+    push(LF, LF);
   };
+
 
   // image: assume <img> tag contains a hexadecimal string produced by your converter
   // The string should already be in "raster bytes" format (packed bits per row).
@@ -112,7 +128,7 @@ export function formatPrinterText(input: string): Uint8Array {
   // parse input by lines but we must handle some tags that can span single line (like <font>..</font>)
   // We'll split by "\n" but preserve empty lines (feed).
   const rawLines = input.split("\n");
-
+console.log(rawLines);
   for (let rawLine of rawLines) {
     // Trim only edges — keep internal spaces
     let line = rawLine;
@@ -214,7 +230,6 @@ export function formatPrinterText(input: string): Uint8Array {
 
     // generic inline <b> and <u> for normal (non-font) lines
     // We'll process tokens sequentially to allow multiple inline tags
-    let cursor = 0;
     const tokenRegex = /(<b>|<\/b>|<u(?:\s+type=['"]?double['"]?)?>|<\/u>)/gi;
     let m: RegExpExecArray | null;
     let lastPos = 0;

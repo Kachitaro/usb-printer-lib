@@ -1,13 +1,11 @@
-// file: components/PrintComponent.tsx (Đã sửa đổi để chọn kết nối)
-
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { PrinterCommand, textToUint8Array } from '../service/printCommand'; 
 import { UsbPrinterConnection } from '../service/UsbPrinterConnection';
 import { WebSocketPrinterConnection } from '../service/webSocketPrinterConnection';
 import { UsbWsPrinterConnection } from '../types';
 
-const PRINTER_USB_VENDOR_ID: number = 0x04b8; 
-const PRINTER_USB_PRODUCT_ID: number = 0x0202; 
+const PRINTER_USB_VENDOR_ID: number = 8137;
+const PRINTER_USB_PRODUCT_ID: number = 8214; 
 const WEBSOCKET_URL: string = 'ws://localhost:5048';
 
 // Định nghĩa Interface chung cho các lớp kết nối

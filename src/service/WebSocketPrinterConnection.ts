@@ -1,5 +1,3 @@
-// file: connection/WebSocketPrinterConnection.ts
-
 export class WebSocketPrinterConnection {
   private ws: WebSocket | null = null;
   private url: string;
