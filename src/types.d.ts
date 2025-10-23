@@ -1,3 +1,15 @@
+export interface BasePrinterConnection {
+  transferOut(data: Uint8Array | string | Uint8Array): Promise<void>;
+  isConnected(): boolean;
+}
+
+export interface UsbWsPrinterConnection extends BasePrinterConnection {
+  connect?(): Promise<void>;
+  disconnect?(): void;
+  requestPermission?(): Promise<void>;
+}
+
+
 export interface UsbPrinterOptions {
   vendorId: number;
   productId: number;
