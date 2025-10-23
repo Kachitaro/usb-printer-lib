@@ -1,29 +1,29 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { PrinterCommand } from '../service/printCommand'; 
+import { PrinterCommand } from '../service/printCommand';
 import { UsbPrinterConnection } from '../service/UsbPrinterConnection';
 import { WebSocketPrinterConnection } from '../service/webSocketPrinterConnection';
 import { UsbWsPrinterConnection } from '../types';
 
 const PRINTER_USB_VENDOR_ID: number = 8137;
-const PRINTER_USB_PRODUCT_ID: number = 8214; 
-const WEBSOCKET_URL: string = 'ws://localhost:5048';
+const PRINTER_USB_PRODUCT_ID: number = 8214;
+
+const WEBSOCKET_URL: string = 'ws://10.191.56.134:5048';
 
 interface PrinterConnection {
-  connect?(): Promise<void>;
-  disconnect?(): void;
-  requestPermission?(): Promise<void>;
-  isConnected(): boolean;
+    connect?(): Promise<void>;
+    disconnect?(): void;
+    requestPermission?(): Promise<void>;
+    isConnected(): boolean;
 }
 
 type ConnectionType = 'usb' | 'websocket';
 
 const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
     const [status, setStatus] = useState<string>('Disconnected');
-    const [connectionType, setConnectionType] = useState<ConnectionType>('websocket'); 
-    const connectionRef = useRef<PrinterConnection | null>(null);   
+    const [connectionType, setConnectionType] = useState<ConnectionType>('websocket');
+    const connectionRef = useRef<PrinterConnection | null>(null);
     const printerCommandRef = useRef<PrinterCommand | null>(null);
 
-    // Xóa kết nối và lệnh in hiện tại
     const clearConnection = useCallback(() => {
         if (connectionRef.current && connectionRef.current.disconnect) {
             connectionRef.current.disconnect();
@@ -32,38 +32,38 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
         printerCommandRef.current = null;
     }, []);
 
-    // Hàm kết nối chung cho cả USB và WebSocket
     const handleConnect = useCallback(async () => {
-        // Nếu đã kết nối, không làm gì
         if (connectionRef.current?.isConnected()) {
             setStatus('Already connected.');
             return;
         }
 
-        clearConnection(); // Xóa kết nối cũ (nếu có)
+        clearConnection();
 
         setStatus(`Connecting via ${connectionType.toUpperCase()}...`);
 
         try {
             let connection: UsbWsPrinterConnection;
-
-            if (connectionType === 'websocket') {
+            const isWS = connectionType === 'websocket'
+            if (isWS) {
                 const wsConnection = new WebSocketPrinterConnection(WEBSOCKET_URL);
                 await wsConnection.connect();
                 connection = wsConnection;
             } else { // connectionType === 'usb'
                 const usbConnection = UsbPrinterConnection.getInstance(
-                    PRINTER_USB_VENDOR_ID, 
+                    PRINTER_USB_VENDOR_ID,
                     PRINTER_USB_PRODUCT_ID
                 );
                 // Với USB, ta yêu cầu quyền truy cập (user gesture)
-                await usbConnection.requestPermission(); 
+                await usbConnection.requestPermission();
                 connection = usbConnection;
             }
-            
+
             connectionRef.current = connection;
             printerCommandRef.current = new PrinterCommand(connection);
-            
+
+            // printerCommandRef.current.setPrinterCodePage(isWS ? undefined : 28)
+
             setStatus(`Connected via ${connectionType.toUpperCase()} (Ready to print).`);
 
         } catch (error: any) {
@@ -97,7 +97,7 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
         setStatus(`Sending print data via ${connectionType.toUpperCase()}...`);
 
         try {
-            await command.printText(content); 
+            await command.printText(content);
 
             setStatus('Print command sent successfully.');
         } catch (error: any) {
@@ -116,23 +116,23 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
 
             <div style={{ marginBottom: '10px' }}>
                 <label>
-                    <input 
-                        type="radio" 
-                        value="websocket" 
-                        checked={connectionType === 'websocket'} 
-                        onChange={() => setConnectionType('websocket')} 
+                    <input
+                        type="radio"
+                        value="websocket"
+                        checked={connectionType === 'websocket'}
+                        onChange={() => setConnectionType('websocket')}
                         disabled={isConnected || isConnecting}
-                    /> 
+                    />
                     WebSocket ({WEBSOCKET_URL})
                 </label>
                 <label style={{ marginLeft: '15px' }}>
-                    <input 
-                        type="radio" 
-                        value="usb" 
-                        checked={connectionType === 'usb'} 
+                    <input
+                        type="radio"
+                        value="usb"
+                        checked={connectionType === 'usb'}
                         onChange={() => setConnectionType('usb')}
                         disabled={isConnected || isConnecting}
-                    /> 
+                    />
                     USB (Vendor: {PRINTER_USB_VENDOR_ID}, Product: {PRINTER_USB_PRODUCT_ID})
                 </label>
             </div>
@@ -140,10 +140,10 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
             <button
                 onClick={isConnected ? handleDisconnect : handleConnect}
                 disabled={isConnecting}
-                style={{ 
-                    backgroundColor: isConnected ? 'red' : 'green', 
-                    color: 'white', 
-                    margin: '5px' 
+                style={{
+                    backgroundColor: isConnected ? 'red' : 'green',
+                    color: 'white',
+                    margin: '5px'
                 }}
             >
                 {isConnected ? 'Disconnect' : isConnecting ? 'Connecting...' : 'Connect'}

@@ -1,18 +1,13 @@
 import { formatPrinterText } from "../formatPrinterText";
 import { BasePrinterConnection } from "../types";
-import { UsbPrinterConnection } from "./UsbPrinterConnection";
-import { WebSocketPrinterConnection } from "./webSocketPrinterConnection";
-
 
 export const textToUint8Array = (text: string): Uint8Array => {
-    const encoder = new TextEncoder();
-    return encoder.encode(text);
+  const encoder = new TextEncoder();
+  return encoder.encode(text);
 };
-
 
 export class PrinterCommand {
   private connection: BasePrinterConnection;
-
   constructor(connection: BasePrinterConnection) {
     this.connection = connection;
   }
@@ -21,22 +16,30 @@ export class PrinterCommand {
     return this.connection.isConnected();
   }
 
-  async printRaw(data: Uint8Array | string): Promise<void> {
-    if (typeof data === 'string') {
-        data = textToUint8Array(data);
-    }
+  async setPrinterCodePage(command?: number | Uint8Array): Promise<void> {
+    let finalCommand = new Uint8Array([0x1C, 0x26, 0x1C, 0x43, 0xFF]);;
 
-    if (this.connection instanceof UsbPrinterConnection) {
-        await this.connection.transferOut(data);
-    } else if (this.connection instanceof WebSocketPrinterConnection) {
-        if (data instanceof Uint8Array) {
-            await this.connection.transferOut(data);
-        } else {
-            throw new Error("Dữ liệu gửi qua WebSocket phải là Uint8Array.");
-        }
-    } else {
-        throw new Error("Lớp kết nối không hợp lệ.");
+    if (command instanceof Uint8Array) {
+      // This is often required for complex Vietnamese character sets on Sunmi devices.
+      finalCommand = new Uint8Array([0x1C, 0x26, 0x1C, 0x43, 0xFF]);
     }
+    else if (typeof command == 'number'){
+      // Standard ESC/POS Code Page Command:
+      // 1. ESC t n (0x1B 0x74 n) - Select Code Page
+      const setCodePageCmd = new Uint8Array([0x1B, 0x74, command]);
+      // 2. ESC R n (0x1B 0x52 n) - Select International Character Set (Often combined)
+      const setCharSetCmd = new Uint8Array([0x1B, 0x52, command]);
+
+      finalCommand = new Uint8Array([...setCodePageCmd, ...setCharSetCmd]);
+    } 
+    
+    console.log(`Sending standard ESC/POS Code Page command: ${finalCommand}.`);
+    await this.connection.transferOut(finalCommand);
+  }
+
+  async printRaw(data: Uint8Array | string): Promise<void> {
+    if (typeof data === "string") data = textToUint8Array(data);
+    await this.connection.transferOut(data);
   }
 
   async feed(lines: number = 5): Promise<void> {
@@ -49,15 +52,13 @@ export class PrinterCommand {
     await this.printRaw(new Uint8Array([0x1d, 0x56, 0x00]));
   }
 
-  // In format text 
   async printText(text: string): Promise<void> {
-    const data = formatPrinterText(text); 
+    const data = formatPrinterText(text);
     await this.printRaw(data);
     await this.feed();
     await this.cut();
   }
 
-  // In PDF (Placeholder)
   async printPdf(): Promise<void> {
     console.warn("Chức năng in PDF chưa được cài đặt.");
     // TODO: Implement PDF printing logic if needed
