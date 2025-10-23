@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { PrinterCommand, textToUint8Array } from '../service/printCommand'; 
+import { PrinterCommand } from '../service/printCommand'; 
 import { UsbPrinterConnection } from '../service/UsbPrinterConnection';
 import { WebSocketPrinterConnection } from '../service/webSocketPrinterConnection';
 import { UsbWsPrinterConnection } from '../types';
@@ -8,11 +8,10 @@ const PRINTER_USB_VENDOR_ID: number = 8137;
 const PRINTER_USB_PRODUCT_ID: number = 8214; 
 const WEBSOCKET_URL: string = 'ws://localhost:5048';
 
-// Định nghĩa Interface chung cho các lớp kết nối
 interface PrinterConnection {
-  connect?(): Promise<void>; // WebSocket cần connect()
+  connect?(): Promise<void>;
   disconnect?(): void;
-  requestPermission?(): Promise<void>; // USB cần requestPermission()
+  requestPermission?(): Promise<void>;
   isConnected(): boolean;
 }
 
@@ -20,11 +19,8 @@ type ConnectionType = 'usb' | 'websocket';
 
 const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
     const [status, setStatus] = useState<string>('Disconnected');
-    // Trạng thái chọn phương thức in
     const [connectionType, setConnectionType] = useState<ConnectionType>('websocket'); 
-
     const connectionRef = useRef<PrinterConnection | null>(null);   
-    // Lưu trữ lớp xử lý lệnh in
     const printerCommandRef = useRef<PrinterCommand | null>(null);
 
     // Xóa kết nối và lệnh in hiện tại
@@ -78,22 +74,19 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
         }
     }, [connectionType, clearConnection]);
 
-    // Hàm ngắt kết nối chung
     const handleDisconnect = useCallback(() => {
         if (connectionRef.current) {
-            // Chỉ WebSocket có hàm disconnect rõ ràng
             if (connectionRef.current.disconnect) {
                 connectionRef.current.disconnect();
             }
-            // USB không cần disconnect thủ công (trừ khi gọi device.close()),
-            // nhưng ta vẫn reset trạng thái và ref
+
             connectionRef.current = null;
             printerCommandRef.current = null;
             setStatus('Disconnected.');
         }
     }, []);
 
-    // Hàm in chung
+
     const handlePrint = useCallback(async () => {
         const command = printerCommandRef.current;
         if (!command || !command.isConnected()) {
@@ -104,12 +97,6 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
         setStatus(`Sending print data via ${connectionType.toUpperCase()}...`);
 
         try {
-            // Chuẩn bị dữ liệu in ESC/POS
-            const escposBytes: Uint8Array = textToUint8Array(content);
-            
-            // Gửi dữ liệu thô qua lớp PrinterCommand
-            await command.printRaw(escposBytes); 
-            
             await command.printText(content); 
 
             setStatus('Print command sent successfully.');
@@ -127,7 +114,6 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
         <div>
             <h2>Print Selection and Status</h2>
 
-            {/* Lựa chọn phương thức kết nối */}
             <div style={{ marginBottom: '10px' }}>
                 <label>
                     <input 
@@ -151,7 +137,6 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
                 </label>
             </div>
 
-            {/* Nút MỞ/ĐÓNG KẾT NỐI */}
             <button
                 onClick={isConnected ? handleDisconnect : handleConnect}
                 disabled={isConnecting}
@@ -164,7 +149,6 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
                 {isConnected ? 'Disconnect' : isConnecting ? 'Connecting...' : 'Connect'}
             </button>
 
-            {/* Nút GỬI LỆNH IN */}
             <button
                 onClick={handlePrint}
                 disabled={!isConnected || isSending}
