@@ -77,7 +77,7 @@ export class UsbPrinterConnection {
   async requestPermission(): Promise<void> {
     try {
       const device = await (navigator as any).usb.requestDevice({
-        filters: [{ vendorId: this.vendorId, productId: this.productId }],
+        filters: [  { classCode: 7 }],
       });
       await this.setupDevice(device);
       console.log("Đã cấp quyền và kết nối máy in USB:", device.productName);

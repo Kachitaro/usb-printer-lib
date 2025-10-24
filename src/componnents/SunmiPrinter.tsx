@@ -62,7 +62,7 @@ const PrintComponent: React.FC<{ content: string }> = ({ content }) => {
             connectionRef.current = connection;
             printerCommandRef.current = new PrinterCommand(connection);
 
-            // printerCommandRef.current.setPrinterCodePage(isWS ? undefined : 28)
+            printerCommandRef.current.setPrinterCodePage(isWS ? undefined : 28)
 
             setStatus(`Connected via ${connectionType.toUpperCase()} (Ready to print).`);
 
